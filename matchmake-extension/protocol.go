@@ -58,6 +58,8 @@ func NewCommonProtocol(protocol matchmake_extension.Interface) *CommonProtocol {
 	protocol.SetHandlerModifyCurrentGameAttribute(commonProtocol.modifyCurrentGameAttribute)
 	protocol.SetHandlerBrowseMatchmakeSession(commonProtocol.browseMatchmakeSession)
 	protocol.SetHandlerJoinMatchmakeSessionEx(commonProtocol.joinMatchmakeSessionEx)
+	protocol.SetHandlerUpdateNotificationData(commonProtocol.updateNotificationData)
+	protocol.SetHandlerGetFriendNotificationData(commonProtocol.getFriendNotificationData)
 
 	return commonProtocol
 }

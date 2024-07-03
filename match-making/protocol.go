@@ -6,6 +6,7 @@ import (
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
 	_ "github.com/PretendoNetwork/nex-protocols-go/v2"
 	match_making "github.com/PretendoNetwork/nex-protocols-go/v2/match-making"
+	notifications_types "github.com/PretendoNetwork/nex-protocols-go/v2/notifications/types"
 )
 
 type CommonProtocol struct {
@@ -29,6 +30,7 @@ func NewCommonProtocol(protocol match_making.Interface) *CommonProtocol {
 	}
 
 	common_globals.Sessions = make(map[uint32]*common_globals.CommonMatchmakeSession)
+	common_globals.NotificationDatas = make(map[uint64]*notifications_types.NotificationEvent)
 
 	protocol.SetHandlerUnregisterGathering(commonProtocol.unregisterGathering)
 	protocol.SetHandlerFindBySingleID(commonProtocol.findBySingleID)

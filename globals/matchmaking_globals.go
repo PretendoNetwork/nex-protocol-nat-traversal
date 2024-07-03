@@ -3,6 +3,7 @@ package common_globals
 import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
+	notifications_types "github.com/PretendoNetwork/nex-protocols-go/v2/notifications/types"
 )
 
 type CommonMatchmakeSession struct {
@@ -12,6 +13,7 @@ type CommonMatchmakeSession struct {
 }
 
 var Sessions map[uint32]*CommonMatchmakeSession
+var NotificationDatas map[uint64]*notifications_types.NotificationEvent
 var GetUserFriendPIDsHandler func(pid uint32) []uint32
 var CurrentGatheringID = nex.NewCounter[uint32](0)
 var CurrentMatchmakingCallID = nex.NewCounter[uint32](0)
