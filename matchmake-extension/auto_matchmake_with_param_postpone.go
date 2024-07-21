@@ -17,9 +17,36 @@ func (commonProtocol *CommonProtocol) autoMatchmakeWithParamPostpone(err error, 
 	connection := packet.Sender().(*nex.PRUDPConnection)
 	endpoint := connection.Endpoint().(*nex.PRUDPEndPoint)
 
-	// * A client may disconnect from a session without leaving reliably,
-	// * so let's make sure the client is removed from the session
-	common_globals.RemoveConnectionFromAllSessions(connection)
+	// * Process additionalParticipants early so we can cancel matchmaking if it's wrong
+	// * additionalParticipants is used by Splatoon to move Fest teams around between rooms
+	oldGid := autoMatchmakeParam.GIDForParticipationCheck.Value
+	oldGathering := common_globals.Sessions[oldGid]
+	// * Check the caller is actually in the old session
+	useAdditionalParticipants := oldGathering != nil && oldGathering.ConnectionIDs.Has(connection.ID)
+
+	// * Check the other participants are actually in the old session, and note down the connection IDs
+	additionalParticipants := make([]uint32, autoMatchmakeParam.AdditionalParticipants.Length()+1)
+
+	// * If using additionalParticipants we'll *move* everyone, rather than disconnect/reconnect.
+	// * This prevents issues from host migration and disconnected notifications.
+	if useAdditionalParticipants {
+		for i, pid := range autoMatchmakeParam.AdditionalParticipants.Slice() {
+			targetConnection := endpoint.FindConnectionByPID(pid.Value())
+			if targetConnection == nil || !oldGathering.ConnectionIDs.Has(targetConnection.ID) {
+				// * This code is so early in the matchmaking process so this error can be here
+				return nil, nex.NewError(nex.ResultCodes.RendezVous.NotParticipatedGathering, "Couldn't find connection")
+			}
+
+			additionalParticipants[i] = targetConnection.ID
+		}
+
+		// * Include the host too!
+		additionalParticipants[len(additionalParticipants)-1] = connection.ID
+	} else {
+		// * A client may disconnect from a session without leaving reliably,
+		// * so let's make sure the client is removed from the session.
+		common_globals.RemoveConnectionFromAllSessions(connection)
+	}
 
 	matchmakeSession := autoMatchmakeParam.SourceMatchmakeSession
 
@@ -37,10 +64,19 @@ func (commonProtocol *CommonProtocol) autoMatchmakeWithParamPostpone(err error, 
 		session = sessions[0]
 	}
 
-	errCode := common_globals.AddPlayersToSession(session, []uint32{connection.ID}, connection, "")
-	if errCode != nil {
-		common_globals.Logger.Error(errCode.Error())
-		return nil, errCode
+	if useAdditionalParticipants {
+		// * Move everyone. They're still connected to their old session
+		errCode := common_globals.MovePlayersToSession(session, additionalParticipants, connection, autoMatchmakeParam.JoinMessage.Value)
+		if errCode != nil {
+			common_globals.Logger.Error(errCode.Error())
+			return nil, errCode
+		}
+	} else {
+		errCode := common_globals.AddPlayersToSession(session, []uint32{connection.ID}, connection, autoMatchmakeParam.JoinMessage.Value)
+		if errCode != nil {
+			common_globals.Logger.Error(errCode.Error())
+			return nil, errCode
+		}
 	}
 
 	matchmakeDataHolder := types.NewAnyDataHolder()

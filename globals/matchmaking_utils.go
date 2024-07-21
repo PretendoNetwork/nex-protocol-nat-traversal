@@ -625,3 +625,73 @@ func ChangeSessionOwner(currentOwner *nex.PRUDPConnection, gathering uint32, isL
 		return false
 	})
 }
+
+func MovePlayersToSession(newSession *CommonMatchmakeSession, connectionIDs []uint32, initiatingConnection *nex.PRUDPConnection, joinMessage string) *nex.Error {
+	endpoint := initiatingConnection.Endpoint().(*nex.PRUDPEndPoint)
+	server := endpoint.Server
+
+	for _, connectionID := range connectionIDs {
+		target := endpoint.FindConnectionByID(connectionID)
+		if target == nil {
+			Logger.Warning("Connection not found")
+			continue
+		}
+
+		// * Switch to new gathering
+		category := notifications.NotificationCategories.SwitchGathering
+		subtype := notifications.NotificationSubTypes.SwitchGathering.None
+
+		oEvent := notifications_types.NewNotificationEvent()
+		oEvent.PIDSource = initiatingConnection.PID()
+		oEvent.Type = types.NewPrimitiveU32(notifications.BuildNotificationType(category, subtype))
+		oEvent.Param1 = newSession.GameMatchmakeSession.ID.Copy().(*types.PrimitiveU32)
+		oEvent.Param2 = types.NewPrimitiveU32(target.PID().LegacyValue()) // TODO - This assumes a legacy client. Will not work on the Switch
+
+		stream := nex.NewByteStreamOut(endpoint.LibraryVersions(), endpoint.ByteStreamSettings())
+
+		oEvent.WriteTo(stream)
+
+		rmcRequest := nex.NewRMCRequest(endpoint)
+		rmcRequest.ProtocolID = notifications.ProtocolID
+		rmcRequest.CallID = CurrentMatchmakingCallID.Next()
+		rmcRequest.MethodID = notifications.MethodProcessNotificationEvent
+		rmcRequest.Parameters = stream.Bytes()
+
+		rmcRequestBytes := rmcRequest.Bytes()
+
+		var messagePacket nex.PRUDPPacketInterface
+
+		if target.DefaultPRUDPVersion == 0 {
+			messagePacket, _ = nex.NewPRUDPPacketV0(server, target, nil)
+		} else {
+			messagePacket, _ = nex.NewPRUDPPacketV1(server, target, nil)
+		}
+
+		messagePacket.SetType(constants.DataPacket)
+		messagePacket.AddFlag(constants.PacketFlagNeedsAck)
+		messagePacket.AddFlag(constants.PacketFlagReliable)
+		messagePacket.SetSourceVirtualPortStreamType(target.StreamType)
+		messagePacket.SetSourceVirtualPortStreamID(endpoint.StreamID)
+		messagePacket.SetDestinationVirtualPortStreamType(target.StreamType)
+		messagePacket.SetDestinationVirtualPortStreamID(target.StreamID)
+		messagePacket.SetPayload(rmcRequestBytes)
+
+		server.Send(messagePacket)
+
+		// * Remove from old session(s)
+		// * Do it manually instead of RemoveConnectionFromAllSessions to avoid host migration and other confusing
+		// * notifications
+		for gid := FindConnectionSession(target.ID); gid != 0; {
+			RemoveConnectionIDFromSession(target.ID, gid)
+			gid = FindConnectionSession(target.ID)
+		}
+
+		// * Add to new session!
+		err := AddPlayersToSession(newSession, []uint32{target.ID}, initiatingConnection, joinMessage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
