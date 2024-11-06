@@ -14,6 +14,26 @@ func (commonProtocol *CommonProtocol) getRanking(err error, packet nex.PacketInt
 		return nil, nex.NewError(nex.ResultCodes.Core.NotImplemented, "change_error")
 	}
 
+	if commonProtocol.GetNearbyRankingsAndCountByCategoryAndRankingOrderParam == nil {
+		common_globals.Logger.Warning("Ranking::GetRanking missing GetNearbyRankingsAndCountByCategoryAndRankingOrderParam!")
+		return nil, nex.NewError(nex.ResultCodes.Core.NotImplemented, "change_error")
+	}
+
+	if commonProtocol.GetFriendsRankingsAndCountByCategoryAndRankingOrderParam == nil {
+		common_globals.Logger.Warning("Ranking::GetRanking missing GetFriendsRankingsAndCountByCategoryAndRankingOrderParam!")
+		return nil, nex.NewError(nex.ResultCodes.Core.NotImplemented, "change_error")
+	}
+
+	if commonProtocol.GetNearbyFriendsRankingsAndCountByCategoryAndRankingOrderParam == nil {
+		common_globals.Logger.Warning("Ranking::GetRanking missing GetNearbyFriendsRankingsAndCountByCategoryAndRankingOrderParam!")
+		return nil, nex.NewError(nex.ResultCodes.Core.NotImplemented, "change_error")
+	}
+
+	if commonProtocol.GetOwnRankingByCategoryAndRankingOrderParam == nil {
+		common_globals.Logger.Warning("Ranking::GetRanking missing GetOwnRankingByCategoryAndRankingOrderParam!")
+		return nil, nex.NewError(nex.ResultCodes.Core.NotImplemented, "change_error")
+	}
+
 	if err != nil {
 		common_globals.Logger.Error(err.Error())
 		return nil, nex.NewError(nex.ResultCodes.Ranking.InvalidArgument, "change_error")
@@ -21,8 +41,27 @@ func (commonProtocol *CommonProtocol) getRanking(err error, packet nex.PacketInt
 
 	connection := packet.Sender()
 	endpoint := connection.Endpoint()
+	callerPid := principalID
+	// * PUYOPUYOTETRIS seems to do this sometimes
+	if callerPid.Value() == 0 {
+		callerPid = connection.PID()
+	}
 
-	rankDataList, totalCount, err := commonProtocol.GetRankingsAndCountByCategoryAndRankingOrderParam(category, orderParam)
+	var rankDataList *types.List[*ranking_types.RankingRankData]
+	var totalCount uint32
+
+	if rankingMode.Value == 0 {
+		rankDataList, totalCount, err = commonProtocol.GetRankingsAndCountByCategoryAndRankingOrderParam(category, orderParam)
+	} else if rankingMode.Value == 1 {
+		rankDataList, totalCount, err = commonProtocol.GetNearbyRankingsAndCountByCategoryAndRankingOrderParam(callerPid, category, orderParam)
+	} else if rankingMode.Value == 2 {
+		rankDataList, totalCount, err = commonProtocol.GetFriendsRankingsAndCountByCategoryAndRankingOrderParam(callerPid, category, orderParam)
+	} else if rankingMode.Value == 3 {
+		rankDataList, totalCount, err = commonProtocol.GetNearbyFriendsRankingsAndCountByCategoryAndRankingOrderParam(callerPid, category, orderParam)
+	} else { // rankingMode.Value == 4
+		rankDataList, totalCount, err = commonProtocol.GetOwnRankingByCategoryAndRankingOrderParam(callerPid, category, orderParam)
+	}
+
 	if err != nil {
 		common_globals.Logger.Critical(err.Error())
 		return nil, nex.NewError(nex.ResultCodes.Ranking.Unknown, "change_error")
