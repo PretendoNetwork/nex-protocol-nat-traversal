@@ -77,6 +77,36 @@ func CheckValidMatchmakeSession(matchmakeSession match_making_types.MatchmakeSes
 	return true
 }
 
+// CheckValidPersistentGathering checks if a PersistentGathering is valid
+func CheckValidPersistentGathering(persistentGathering match_making_types.PersistentGathering) bool {
+	if !CheckValidGathering(persistentGathering.Gathering) {
+		return false
+	}
+
+	// * Only allow normal and password-protected community types
+	if persistentGathering.CommunityType != 0 && persistentGathering.CommunityType != 1 {
+		return false
+	}
+
+	// * All strings must have a length lower than 256
+	//
+	// TODO - Can the password actually be up to 256 characters?
+	if len(persistentGathering.Password) > 256 {
+		return false
+	}
+
+	if len(persistentGathering.Attribs) != 6 {
+		return false
+	}
+
+	// * All buffers must have a length lower than 512
+	if len(persistentGathering.ApplicationBuffer) > 512 {
+		return false
+	}
+
+	return true
+}
+
 // CanJoinMatchmakeSession checks if a PID is allowed to join a matchmake session
 func CanJoinMatchmakeSession(manager *MatchmakingManager, pid types.PID, matchmakeSession match_making_types.MatchmakeSession) *nex.Error {
 	// TODO - Is this the right error?

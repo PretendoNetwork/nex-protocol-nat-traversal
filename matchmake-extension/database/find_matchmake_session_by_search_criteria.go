@@ -10,7 +10,6 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/types"
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
-	"github.com/PretendoNetwork/nex-protocols-go/v2/globals"
 	"github.com/PretendoNetwork/nex-protocols-go/v2/match-making/constants"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 	pqextended "github.com/PretendoNetwork/pq-extended"
@@ -227,7 +226,7 @@ func FindMatchmakeSessionBySearchCriteria(manager *common_globals.MatchmakingMan
 			// * Closest attribute
 			attribute1, err := strconv.ParseUint(string(searchCriteria.Attribs[1]), 10, 32)
 			if err != nil {
-				globals.Logger.Error(err.Error())
+				common_globals.Logger.Error(err.Error())
 				continue
 			}
 
@@ -238,7 +237,7 @@ func FindMatchmakeSessionBySearchCriteria(manager *common_globals.MatchmakingMan
 			// TODO - Actually implement ranked matchmaking, using closest attribute at the moment
 			attribute1, err := strconv.ParseUint(string(searchCriteria.Attribs[1]), 10, 32)
 			if err != nil {
-				globals.Logger.Error(err.Error())
+				common_globals.Logger.Error(err.Error())
 				continue
 			}
 
@@ -264,7 +263,7 @@ func FindMatchmakeSessionBySearchCriteria(manager *common_globals.MatchmakingMan
 
 			attribute1, err := strconv.ParseUint(string(searchCriteria.Attribs[1]), 10, 32)
 			if err != nil {
-				globals.Logger.Error(err.Error())
+				common_globals.Logger.Error(err.Error())
 				continue
 			}
 
@@ -294,7 +293,7 @@ func FindMatchmakeSessionBySearchCriteria(manager *common_globals.MatchmakingMan
 			searchCriteria.ExcludeSystemPasswordSet,
 		)
 		if err != nil {
-			globals.Logger.Critical(err.Error())
+			common_globals.Logger.Critical(err.Error())
 			continue
 		}
 
@@ -333,7 +332,7 @@ func FindMatchmakeSessionBySearchCriteria(manager *common_globals.MatchmakingMan
 				&resultMatchmakeSession.CodeWord,
 			)
 			if err != nil {
-				globals.Logger.Critical(err.Error())
+				common_globals.Logger.Critical(err.Error())
 				continue
 			}
 

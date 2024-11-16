@@ -4,7 +4,6 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/types"
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
-	match_making_database "github.com/PretendoNetwork/nex-protocols-common-go/v2/match-making/database"
 	"github.com/PretendoNetwork/nex-protocols-common-go/v2/matchmake-extension/database"
 	"github.com/PretendoNetwork/nex-protocols-go/v2/match-making/constants"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
@@ -51,7 +50,7 @@ func (commonProtocol *CommonProtocol) createMatchmakeSessionWithParam(err error,
 		return nil, nexError
 	}
 
-	participants, nexError := match_making_database.JoinGatheringWithParticipants(commonProtocol.manager, uint32(joinedMatchmakeSession.Gathering.ID), connection, createMatchmakeSessionParam.AdditionalParticipants, string(createMatchmakeSessionParam.JoinMessage), constants.JoinMatchmakeSessionBehaviorJoinMyself)
+	participants, nexError := database.JoinMatchmakeSessionWithParticipants(commonProtocol.manager, joinedMatchmakeSession, connection, createMatchmakeSessionParam.AdditionalParticipants, string(createMatchmakeSessionParam.JoinMessage), constants.JoinMatchmakeSessionBehaviorJoinMyself)
 	if nexError != nil {
 		common_globals.Logger.Error(nexError.Error())
 		commonProtocol.manager.Mutex.Unlock()

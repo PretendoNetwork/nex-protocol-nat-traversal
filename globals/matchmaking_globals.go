@@ -14,7 +14,7 @@ type MatchmakingManager struct {
 	Endpoint                 *nex.PRUDPEndPoint
 	Mutex                    *sync.RWMutex
 	GetUserFriendPIDs        func(pid uint32) []uint32
-	GetDetailedGatheringByID func(manager *MatchmakingManager, gatheringID uint32) (types.RVType, string, *nex.Error)
+	GetDetailedGatheringByID func(manager *MatchmakingManager, sourcePID uint64, gatheringID uint32) (types.RVType, string, *nex.Error)
 }
 
 // NewMatchmakingManager returns a new MatchmakingManager

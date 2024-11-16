@@ -4,7 +4,6 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/types"
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
-	match_making_database "github.com/PretendoNetwork/nex-protocols-common-go/v2/match-making/database"
 	"github.com/PretendoNetwork/nex-protocols-common-go/v2/matchmake-extension/database"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 	matchmake_extension "github.com/PretendoNetwork/nex-protocols-go/v2/matchmake-extension"
@@ -87,7 +86,7 @@ func (commonProtocol *CommonProtocol) autoMatchmakeWithSearchCriteriaPostpone(er
 		vacantParticipants = uint16(lstSearchCriteria[0].VacantParticipants)
 	}
 
-	participants, nexError := match_making_database.JoinGathering(commonProtocol.manager, uint32(resultSession.Gathering.ID), connection, vacantParticipants, string(strMessage))
+	participants, nexError := database.JoinMatchmakeSession(commonProtocol.manager, resultSession, connection, vacantParticipants, string(strMessage))
 	if nexError != nil {
 		commonProtocol.manager.Mutex.Unlock()
 		return nil, nexError

@@ -8,8 +8,8 @@ import (
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 )
 
-// RegisterGathering registers a new gathering on the databse. No participants are added
-func RegisterGathering(manager *common_globals.MatchmakingManager, pid types.PID, gathering *match_making_types.Gathering, gatheringType string) (types.DateTime, *nex.Error) {
+// RegisterGathering registers a new gathering on the database. No participants are added
+func RegisterGathering(manager *common_globals.MatchmakingManager, ownerPID types.PID, hostPID types.PID, gathering *match_making_types.Gathering, gatheringType string) (types.DateTime, *nex.Error) {
 	startedTime := types.NewDateTime(0).Now()
 	var gatheringID uint32
 
@@ -38,8 +38,8 @@ func RegisterGathering(manager *common_globals.MatchmakingManager, pid types.PID
 		$10,
 		$11
 	) RETURNING id`,
-		pid,
-		pid,
+		ownerPID,
+		hostPID,
 		gathering.MinimumParticipants,
 		gathering.MaximumParticipants,
 		gathering.ParticipationPolicy,
@@ -56,13 +56,13 @@ func RegisterGathering(manager *common_globals.MatchmakingManager, pid types.PID
 
 	gathering.ID = types.NewUInt32(gatheringID)
 
-	nexError := tracking.LogRegisterGathering(manager.Database, pid, uint32(gathering.ID))
+	nexError := tracking.LogRegisterGathering(manager.Database, ownerPID, uint32(gathering.ID))
 	if nexError != nil {
 		return types.NewDateTime(0), nexError
 	}
 
-	gathering.OwnerPID = pid
-	gathering.HostPID = pid
+	gathering.OwnerPID = ownerPID.Copy().(types.PID)
+	gathering.HostPID = hostPID.Copy().(types.PID)
 
 	return startedTime, nil
 }
