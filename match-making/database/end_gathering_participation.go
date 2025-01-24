@@ -14,7 +14,7 @@ import (
 
 // EndGatheringParticipation ends the participation of a connection within a gathering and performs any additional handling required
 func EndGatheringParticipation(manager *common_globals.MatchmakingManager, gatheringID uint32, connection *nex.PRUDPConnection, message string) *nex.Error {
-	gathering, gatheringType, participants, _, nexError := FindGatheringByID(manager, gatheringID)
+	gathering, _, participants, _, nexError := FindGatheringByID(manager, gatheringID)
 	if nexError != nil {
 		return nexError
 	}
@@ -22,12 +22,6 @@ func EndGatheringParticipation(manager *common_globals.MatchmakingManager, gathe
 	// TODO - Is this the right error?
 	if !slices.Contains(participants, uint64(connection.PID())) {
 		return nex.NewError(nex.ResultCodes.RendezVous.NotParticipatedGathering, "change_error")
-	}
-
-	// * If the gathering is a PersistentGathering, only remove the participant from the gathering
-	if gatheringType == "PersistentGathering" {
-		_, nexError = RemoveParticipantFromGathering(manager, gatheringID, uint64(connection.PID()))
-		return nexError
 	}
 
 	newParticipants, nexError := RemoveParticipantFromGathering(manager, gatheringID, uint64(connection.PID()))
@@ -38,6 +32,11 @@ func EndGatheringParticipation(manager *common_globals.MatchmakingManager, gathe
 	nexError = tracking.LogLeaveGathering(manager.Database, connection.PID(), gatheringID, newParticipants)
 	if nexError != nil {
 		return nexError
+	}
+
+	// * If the gathering is a persistent gathering and allows zero users, only remove the participant from the gathering
+	if uint32(gathering.Flags) & (match_making.GatheringFlags.PersistentGathering | match_making.GatheringFlags.PersistentGatheringAllowZeroUsers) != 0 {
+		return nil
 	}
 
 	if len(newParticipants) == 0 {

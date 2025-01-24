@@ -19,7 +19,7 @@ func (commonProtocol *CommonProtocol) findBySingleID(err error, packet nex.Packe
 
 	commonProtocol.manager.Mutex.RLock()
 
-	gathering, _, nexError := commonProtocol.manager.GetDetailedGatheringByID(commonProtocol.manager, uint32(id))
+	gathering, _, nexError := commonProtocol.manager.GetDetailedGatheringByID(commonProtocol.manager, uint64(connection.PID()), uint32(id))
 	if nexError != nil {
 		commonProtocol.manager.Mutex.RUnlock()
 		return nil, nexError

@@ -13,7 +13,7 @@ import (
 
 // CreateMatchmakeSession creates a new MatchmakeSession on the database. No participants are added
 func CreateMatchmakeSession(manager *common_globals.MatchmakingManager, connection *nex.PRUDPConnection, matchmakeSession *match_making_types.MatchmakeSession) *nex.Error {
-	startedTime, nexError := match_making_database.RegisterGathering(manager, connection.PID(), &matchmakeSession.Gathering, "MatchmakeSession")
+	startedTime, nexError := match_making_database.RegisterGathering(manager, connection.PID(), connection.PID(), &matchmakeSession.Gathering, "MatchmakeSession")
 	if nexError != nil {
 		return nexError
 	}

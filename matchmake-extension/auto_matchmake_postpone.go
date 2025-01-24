@@ -6,7 +6,6 @@ import (
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 	matchmake_extension "github.com/PretendoNetwork/nex-protocols-go/v2/matchmake-extension"
-	match_making_database "github.com/PretendoNetwork/nex-protocols-common-go/v2/match-making/database"
 	database "github.com/PretendoNetwork/nex-protocols-common-go/v2/matchmake-extension/database"
 )
 
@@ -68,7 +67,7 @@ func (commonProtocol *CommonProtocol) autoMatchmakePostpone(err error, packet ne
 		}
 	}
 
-	participants, nexError := match_making_database.JoinGathering(commonProtocol.manager, uint32(resultSession.Gathering.ID), connection, 1, string(message))
+	participants, nexError := database.JoinMatchmakeSession(commonProtocol.manager, *resultSession, connection, 1, string(message))
 	if nexError != nil {
 		commonProtocol.manager.Mutex.Unlock()
 		return nil, nexError

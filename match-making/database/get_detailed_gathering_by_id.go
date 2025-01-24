@@ -7,7 +7,7 @@ import (
 )
 
 // GetDetailedGatheringByID returns a Gathering as an RVType by its gathering ID
-func GetDetailedGatheringByID(manager *common_globals.MatchmakingManager, gatheringID uint32) (types.RVType, string, *nex.Error) {
+func GetDetailedGatheringByID(manager *common_globals.MatchmakingManager, sourcePID uint64, gatheringID uint32) (types.RVType, string, *nex.Error) {
 	gathering, gatheringType, _, _, nexError := FindGatheringByID(manager, gatheringID)
 	if nexError != nil {
 		return nil, "", nexError

@@ -6,6 +6,7 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/constants"
 	"github.com/PretendoNetwork/nex-go/v2/types"
+	match_making_constants "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/constants"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 	notifications "github.com/PretendoNetwork/nex-protocols-go/v2/notifications"
 	notifications_types "github.com/PretendoNetwork/nex-protocols-go/v2/notifications/types"
@@ -71,6 +72,36 @@ func CheckValidMatchmakeSession(matchmakeSession match_making_types.MatchmakeSes
 	}
 
 	if len(matchmakeSession.SessionKey) > 512 {
+		return false
+	}
+
+	return true
+}
+
+// CheckValidPersistentGathering checks if a PersistentGathering is valid
+func CheckValidPersistentGathering(persistentGathering match_making_types.PersistentGathering) bool {
+	if !CheckValidGathering(persistentGathering.Gathering) {
+		return false
+	}
+
+	// * Only allow normal and password-protected community types
+	if uint32(persistentGathering.CommunityType) != uint32(match_making_constants.PersistentGatheringTypeOpen) && uint32(persistentGathering.CommunityType) != uint32(match_making_constants.PersistentGatheringTypePasswordLocked) {
+		return false
+	}
+
+	// * The UserPassword from a MatchmakeSession can be up to 32 characters, assuming the same here
+	//
+	// TODO - IS this actually the case?
+	if len(persistentGathering.Password) > 32 {
+		return false
+	}
+
+	if len(persistentGathering.Attribs) != 6 {
+		return false
+	}
+
+	// * All buffers must have a length lower than 512
+	if len(persistentGathering.ApplicationBuffer) > 512 {
 		return false
 	}
 

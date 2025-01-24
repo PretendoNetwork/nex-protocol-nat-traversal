@@ -47,7 +47,9 @@ func DisconnectParticipant(manager *common_globals.MatchmakingManager, connectio
 		}
 
 		// * If the gathering is a PersistentGathering and the gathering isn't set to leave when disconnecting, ignore and continue
-		if gatheringType == "PersistentGathering" && uint32(gathering.Flags) & match_making.GatheringFlags.PersistentGatheringLeaveParticipation == 0 {
+		//
+		// TODO - Is the match_making.GatheringFlags.PersistentGathering check correct here?
+		if uint32(gathering.Flags) & match_making.GatheringFlags.PersistentGathering != 0 || (gatheringType == "PersistentGathering" && uint32(gathering.Flags) & match_making.GatheringFlags.PersistentGatheringLeaveParticipation == 0) {
 			continue
 		}
 
@@ -61,6 +63,11 @@ func DisconnectParticipant(manager *common_globals.MatchmakingManager, connectio
 		nexError = tracking.LogDisconnectGathering(manager.Database, connection.PID(), uint32(gathering.ID), participants)
 		if nexError != nil {
 			common_globals.Logger.Error(nexError.Error())
+			continue
+		}
+
+		// * If the gathering is a persistent gathering and allows zero users, only remove the participant from the gathering
+		if uint32(gathering.Flags) & (match_making.GatheringFlags.PersistentGathering | match_making.GatheringFlags.PersistentGatheringAllowZeroUsers) != 0 {
 			continue
 		}
 
