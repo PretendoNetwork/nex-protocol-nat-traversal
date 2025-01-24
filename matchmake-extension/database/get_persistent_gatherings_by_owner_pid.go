@@ -37,47 +37,35 @@ func GetPersistentGatheringsByOwnerPID(manager *common_globals.MatchmakingManage
 		g.type='PersistentGathering' AND
 		g.owner_pid=$1
 		LIMIT $2 OFFSET $3`,
-		uint64(ownerPID),
-		uint32(resultRange.Length),
-		uint32(resultRange.Offset),
+		ownerPID,
+		resultRange.Length,
+		resultRange.Offset,
 	)
 	if err != nil {
 		return nil, nex.NewError(nex.ResultCodes.Core.Unknown, err.Error())
 	}
 
 	for rows.Next() {
-		var gatheringID uint32
-		var ownerPID uint64
-		var hostPID uint64
-		var minimumParticipants uint16
-		var maximumParticipants uint16
-		var participationPolicy uint32
-		var policyArgument uint32
-		var flags uint32
-		var state uint32
-		var description string
-		var communityType uint32
-		var password string
+		resultPersistentGathering := match_making_types.NewPersistentGathering()
 		var resultAttribs []uint32
-		var applicationBuffer []byte
 		var resultParticipationStartDate time.Time
 		var resultParticipationEndDate time.Time
 
 		err = rows.Scan(
-			&gatheringID,
-			&ownerPID,
-			&hostPID,
-			&minimumParticipants,
-			&maximumParticipants,
-			&participationPolicy,
-			&policyArgument,
-			&flags,
-			&state,
-			&description,
-			&communityType,
-			&password,
+			&resultPersistentGathering.Gathering.ID,
+			&resultPersistentGathering.Gathering.OwnerPID,
+			&resultPersistentGathering.Gathering.HostPID,
+			&resultPersistentGathering.Gathering.MinimumParticipants,
+			&resultPersistentGathering.Gathering.MaximumParticipants,
+			&resultPersistentGathering.Gathering.ParticipationPolicy,
+			&resultPersistentGathering.Gathering.PolicyArgument,
+			&resultPersistentGathering.Gathering.Flags,
+			&resultPersistentGathering.Gathering.State,
+			&resultPersistentGathering.Gathering.Description,
+			&resultPersistentGathering.CommunityType,
+			&resultPersistentGathering.Password,
 			pqextended.Array(&resultAttribs),
-			&applicationBuffer,
+			&resultPersistentGathering.ApplicationBuffer,
 			&resultParticipationStartDate,
 			&resultParticipationEndDate,
 		)
@@ -85,9 +73,6 @@ func GetPersistentGatheringsByOwnerPID(manager *common_globals.MatchmakingManage
 			common_globals.Logger.Critical(err.Error())
 			continue
 		}
-
-		resultPersistentGathering := match_making_types.NewPersistentGathering()
-		resultPersistentGathering.ID = types.NewUInt32(gatheringID)
 
 		resultMatchmakeSessionCount, nexError := GetPersistentGatheringSessionCount(manager, uint32(resultPersistentGathering.ID))
 		if nexError != nil {
@@ -101,25 +86,12 @@ func GetPersistentGatheringsByOwnerPID(manager *common_globals.MatchmakingManage
 			continue
 		}
 
-		resultPersistentGathering.OwnerPID = types.NewPID(ownerPID)
-		resultPersistentGathering.HostPID = types.NewPID(hostPID)
-		resultPersistentGathering.MinimumParticipants = types.NewUInt16(minimumParticipants)
-		resultPersistentGathering.MaximumParticipants = types.NewUInt16(maximumParticipants)
-		resultPersistentGathering.ParticipationPolicy = types.NewUInt32(participationPolicy)
-		resultPersistentGathering.PolicyArgument = types.NewUInt32(policyArgument)
-		resultPersistentGathering.Flags = types.NewUInt32(flags)
-		resultPersistentGathering.State = types.NewUInt32(state)
-		resultPersistentGathering.Description = types.NewString(description)
-		resultPersistentGathering.CommunityType = types.NewUInt32(communityType)
-		resultPersistentGathering.Password = types.NewString(password)
-
 		attributesSlice := make([]types.UInt32, len(resultAttribs))
 		for i, value := range resultAttribs {
 			attributesSlice[i] = types.NewUInt32(value)
 		}
 		resultPersistentGathering.Attribs = attributesSlice
 
-		resultPersistentGathering.ApplicationBuffer = applicationBuffer
 		resultPersistentGathering.ParticipationStartDate = resultPersistentGathering.ParticipationStartDate.FromTimestamp(resultParticipationStartDate)
 		resultPersistentGathering.ParticipationEndDate = resultPersistentGathering.ParticipationEndDate.FromTimestamp(resultParticipationEndDate)
 		resultPersistentGathering.MatchmakeSessionCount = types.NewUInt32(resultMatchmakeSessionCount)

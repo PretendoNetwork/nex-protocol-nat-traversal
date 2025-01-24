@@ -13,10 +13,8 @@ import (
 
 // GetPersistentGatheringByGathering gets a persistent gathering with the given gathering data
 func GetPersistentGatheringByGathering(manager *common_globals.MatchmakingManager, gathering match_making_types.Gathering, sourcePID uint64) (match_making_types.PersistentGathering, *nex.Error) {
-	var communityType uint32
-	var password string
+	resultPersistentGathering := match_making_types.NewPersistentGathering()
 	var resultAttribs []uint32
-	var applicationBuffer []byte
 	var resultParticipationStartDate time.Time
 	var resultParticipationEndDate time.Time
 
@@ -29,12 +27,12 @@ func GetPersistentGatheringByGathering(manager *common_globals.MatchmakingManage
 		participation_end_date
 		FROM matchmaking.persistent_gatherings
 		WHERE id=$1`,
-		uint32(gathering.ID),
+		gathering.ID,
 	).Scan(
-		&communityType,
-		&password,
+		&resultPersistentGathering.CommunityType,
+		&resultPersistentGathering.Password,
 		pqextended.Array(&resultAttribs),
-		&applicationBuffer,
+		&resultPersistentGathering.ApplicationBuffer,
 		&resultParticipationStartDate,
 		&resultParticipationEndDate,
 	)
@@ -46,11 +44,7 @@ func GetPersistentGatheringByGathering(manager *common_globals.MatchmakingManage
 		}
 	}
 
-	resultPersistentGathering := match_making_types.NewPersistentGathering()
 	resultPersistentGathering.Gathering = gathering
-
-	resultPersistentGathering.CommunityType = types.NewUInt32(communityType)
-	resultPersistentGathering.Password = types.NewString(password)
 
 	attributesSlice := make([]types.UInt32, len(resultAttribs))
 	for i, value := range resultAttribs {
@@ -58,7 +52,6 @@ func GetPersistentGatheringByGathering(manager *common_globals.MatchmakingManage
 	}
 	resultPersistentGathering.Attribs = attributesSlice
 
-	resultPersistentGathering.ApplicationBuffer = applicationBuffer
 	resultPersistentGathering.ParticipationStartDate = resultPersistentGathering.ParticipationStartDate.FromTimestamp(resultParticipationStartDate)
 	resultPersistentGathering.ParticipationEndDate = resultPersistentGathering.ParticipationEndDate.FromTimestamp(resultParticipationEndDate)
 

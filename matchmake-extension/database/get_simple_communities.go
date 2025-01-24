@@ -28,24 +28,21 @@ func GetSimpleCommunities(manager *common_globals.MatchmakingManager, gatheringI
 
 	for rows.Next() {
 		resultSimpleCommunity := match_making_types.NewSimpleCommunity()
-		var gatheringID uint32
 		var resultMatchmakeSessionCount uint32
 
 		err = rows.Scan(
-			&gatheringID,
+			&resultSimpleCommunity.GatheringID,
 		)
 		if err != nil {
 			common_globals.Logger.Critical(err.Error())
 			continue
 		}
 
-		resultMatchmakeSessionCount, nexError := GetPersistentGatheringSessionCount(manager, gatheringID)
+		resultMatchmakeSessionCount, nexError := GetPersistentGatheringSessionCount(manager, uint32(resultSimpleCommunity.GatheringID))
 		if nexError != nil {
 			common_globals.Logger.Critical(nexError.Error())
 			continue
 		}
-
-		resultSimpleCommunity.GatheringID = types.NewUInt32(gatheringID)
 		resultSimpleCommunity.MatchmakeSessionCount = types.NewUInt32(resultMatchmakeSessionCount)
 
 		simpleCommunities = append(simpleCommunities, resultSimpleCommunity)

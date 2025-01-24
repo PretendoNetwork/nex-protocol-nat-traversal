@@ -15,7 +15,7 @@ func GetCreatedPersistentGatherings(manager *common_globals.MatchmakingManager, 
 		INNER JOIN matchmaking.gatherings AS g ON g.id = pg.id
 		WHERE
 		g.registered=true AND
-		g.owner_pid=$1`, uint64(ownerPID)).Scan(&createdPersistentGatherings)
+		g.owner_pid=$1`, ownerPID).Scan(&createdPersistentGatherings)
 	if err != nil {
 		return 0, nex.NewError(nex.ResultCodes.Core.Unknown, err.Error())
 	}
