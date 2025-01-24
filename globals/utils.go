@@ -6,6 +6,7 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/constants"
 	"github.com/PretendoNetwork/nex-go/v2/types"
+	match_making_constants "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/constants"
 	match_making_types "github.com/PretendoNetwork/nex-protocols-go/v2/match-making/types"
 	notifications "github.com/PretendoNetwork/nex-protocols-go/v2/notifications"
 	notifications_types "github.com/PretendoNetwork/nex-protocols-go/v2/notifications/types"
@@ -84,14 +85,14 @@ func CheckValidPersistentGathering(persistentGathering match_making_types.Persis
 	}
 
 	// * Only allow normal and password-protected community types
-	if persistentGathering.CommunityType != 0 && persistentGathering.CommunityType != 1 {
+	if uint32(persistentGathering.CommunityType) != uint32(match_making_constants.PersistentGatheringTypeOpen) && uint32(persistentGathering.CommunityType) != uint32(match_making_constants.PersistentGatheringTypePasswordLocked) {
 		return false
 	}
 
-	// * All strings must have a length lower than 256
+	// * The UserPassword from a MatchmakeSession can be up to 32 characters, assuming the same here
 	//
-	// TODO - Can the password actually be up to 256 characters?
-	if len(persistentGathering.Password) > 256 {
+	// TODO - IS this actually the case?
+	if len(persistentGathering.Password) > 32 {
 		return false
 	}
 

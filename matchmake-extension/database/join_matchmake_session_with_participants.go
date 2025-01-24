@@ -18,7 +18,7 @@ func JoinMatchmakeSessionWithParticipants(manager *common_globals.MatchmakingMan
 	}
 
 	// TODO - Should we return the error in these cases?
-	if matchmakeSession.MatchmakeSystemType == 5 { // * Attached to a persistent gathering
+	if uint32(matchmakeSession.MatchmakeSystemType) == uint32(constants.MatchmakeSystemTypePersistentGathering) { // * Attached to a persistent gathering
 		persistentGatheringID := uint32(matchmakeSession.Attributes[0])
 		participantList := append(additionalParticipants, connection.PID())
 		for _, participant := range participantList {
