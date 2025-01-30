@@ -8,7 +8,7 @@ import (
 
 // UpdateNotificationData updates the notification data of the specified user and type
 func UpdateNotificationData(manager *common_globals.MatchmakingManager, notificationData notifications_types.NotificationEvent) *nex.Error {
-	_, err := manager.Database.Exec(`INSERT INTO matchmaking.notifications (
+	_, err := manager.Database.Exec(`INSERT INTO matchmaking.notifications AS n (
 		source_pid,
 		type,
 		param_1,
@@ -21,7 +21,7 @@ func UpdateNotificationData(manager *common_globals.MatchmakingManager, notifica
 		$4,
 		$5
 	) ON CONFLICT (source_pid, type) DO UPDATE SET
-	param_1=$3, param_2=$4, param_str=$5, active=true WHERE source_pid=$1 AND type=$2`,
+	param_1=$3, param_2=$4, param_str=$5, active=true WHERE n.source_pid=$1 AND n.type=$2`,
 		notificationData.PIDSource,
 		notificationData.Type,
 		notificationData.Param1,

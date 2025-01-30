@@ -4,6 +4,7 @@ import (
 	"github.com/PretendoNetwork/nex-go/v2"
 	"github.com/PretendoNetwork/nex-go/v2/types"
 	matchmake_extension "github.com/PretendoNetwork/nex-protocols-go/v2/matchmake-extension"
+	notifications "github.com/PretendoNetwork/nex-protocols-go/v2/notifications"
 	notifications_types "github.com/PretendoNetwork/nex-protocols-go/v2/notifications/types"
 	common_globals "github.com/PretendoNetwork/nex-protocols-common-go/v2/globals"
 	"github.com/PretendoNetwork/nex-protocols-common-go/v2/matchmake-extension/database"
@@ -25,7 +26,7 @@ func (commonProtocol *CommonProtocol) getlstFriendNotificationData(err error, pa
 			return nil, nex.NewError(nex.ResultCodes.Core.InvalidArgument, "change_error")
 		}
 
-		notificationTypes[i] = uint32(notificationType)
+		notificationTypes[i] = notifications.BuildNotificationType(uint32(notificationType), 0)
 	}
 
 	commonProtocol.manager.Mutex.RLock()

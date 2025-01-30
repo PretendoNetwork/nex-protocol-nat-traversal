@@ -15,6 +15,13 @@ func GetNotificationDatas(manager *common_globals.MatchmakingManager, sourcePID 
 	var friendList []uint32
 	if manager.GetUserFriendPIDs != nil {
 		friendList = manager.GetUserFriendPIDs(uint32(sourcePID))
+	} else {
+		common_globals.Logger.Warning("GetNotificationDatas missing manager.GetUserFriendPIDs!")
+	}
+
+	// * No friends to check
+	if len(friendList) == 0 {
+		return dataList, nil
 	}
 
 	rows, err := manager.Database.Query(`SELECT
