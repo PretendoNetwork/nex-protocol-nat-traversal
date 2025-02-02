@@ -32,6 +32,9 @@ type CommonProtocol struct {
 	OnAfterModifyCurrentGameAttribute                func(packet nex.PacketInterface, gid types.UInt32, attribIndex types.UInt32, newValue types.UInt32)
 	OnAfterBrowseMatchmakeSession                    func(packet nex.PacketInterface, searchCriteria match_making_types.MatchmakeSessionSearchCriteria, resultRange types.ResultRange)
 	OnAfterJoinMatchmakeSessionEx                    func(packet nex.PacketInterface, gid types.UInt32, strMessage types.String, dontCareMyBlockList types.Bool, participationCount types.UInt16)
+	OnAfterUpdateNotificationData                    func(packet nex.PacketInterface, uiType types.UInt32, uiParam1 types.UInt32, uiParam2 types.UInt32, strParam types.String)
+	OnAfterGetFriendNotificationData                 func(packet nex.PacketInterface, uiType types.Int32)
+	OnAfterGetlstFriendNotificationData              func(packet nex.PacketInterface, lstTypes types.List[types.UInt32])
 }
 
 // SetDatabase defines the matchmaking manager to be used by the common protocol
@@ -81,8 +84,44 @@ func (commonProtocol *CommonProtocol) SetManager(manager *common_globals.Matchma
 		return
 	}
 
+	_, err = manager.Database.Exec(`CREATE TABLE IF NOT EXISTS matchmaking.notifications (
+		id bigserial PRIMARY KEY,
+		source_pid numeric(10),
+		type bigint,
+		param_1 bigint,
+		param_2 bigint,
+		param_str text,
+		active boolean NOT NULL DEFAULT true,
+		UNIQUE (source_pid, type)
+	)`)
+	if err != nil {
+		common_globals.Logger.Error(err.Error())
+		return
+	}
+
+	_, err = manager.Database.Exec(`CREATE TABLE IF NOT EXISTS tracking.notification_data (
+		id bigserial PRIMARY KEY,
+		date timestamp,
+		source_pid numeric(10),
+		type bigint,
+		param_1 bigint,
+		param_2 bigint,
+		param_str text
+	)`)
+	if err != nil {
+		common_globals.Logger.Error(err.Error())
+		return
+	}
+
 	// * In case the server is restarted, unregister any previous matchmake sessions
 	_, err = manager.Database.Exec(`UPDATE matchmaking.gatherings SET registered=false WHERE type='MatchmakeSession'`)
+	if err != nil {
+		common_globals.Logger.Error(err.Error())
+		return
+	}
+
+	// * Mark all notifications as inactive
+	_, err = manager.Database.Exec(`UPDATE matchmaking.notifications SET active=false`)
 	if err != nil {
 		common_globals.Logger.Error(err.Error())
 		return
@@ -91,8 +130,10 @@ func (commonProtocol *CommonProtocol) SetManager(manager *common_globals.Matchma
 
 // NewCommonProtocol returns a new CommonProtocol
 func NewCommonProtocol(protocol matchmake_extension.Interface) *CommonProtocol {
+	endpoint := protocol.Endpoint().(*nex.PRUDPEndPoint)
+
 	commonProtocol := &CommonProtocol{
-		endpoint: protocol.Endpoint(),
+		endpoint: endpoint,
 		protocol: protocol,
 	}
 
@@ -111,6 +152,15 @@ func NewCommonProtocol(protocol matchmake_extension.Interface) *CommonProtocol {
 	protocol.SetHandlerModifyCurrentGameAttribute(commonProtocol.modifyCurrentGameAttribute)
 	protocol.SetHandlerBrowseMatchmakeSession(commonProtocol.browseMatchmakeSession)
 	protocol.SetHandlerJoinMatchmakeSessionEx(commonProtocol.joinMatchmakeSessionEx)
+	protocol.SetHandlerUpdateNotificationData(commonProtocol.updateNotificationData)
+	protocol.SetHandlerGetFriendNotificationData(commonProtocol.getFriendNotificationData)
+	protocol.SetHandlerGetlstFriendNotificationData(commonProtocol.getlstFriendNotificationData)
+
+	endpoint.OnConnectionEnded(func(connection *nex.PRUDPConnection) {
+		commonProtocol.manager.Mutex.Lock()
+		database.InactivateNotificationDatas(commonProtocol.manager, connection.PID())
+		commonProtocol.manager.Mutex.Unlock()
+	})
 
 	return commonProtocol
 }
